@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <alsa/asoundlib.h>
 #include <alsa/pcm.h>
+#include <arpa/inet.h>
 
 static char *device = "default"; /* playback device */
 snd_output_t *output = NULL;
@@ -51,10 +52,64 @@ int main(void) {
 }
 
  */
-//Retourn le socket
-int init_socket(...);
-//
-int init_sound(snd_pcm_t *handle_read,snd_pcm_t *handle_write);
+//Retourne le socket
+int init_socket()
+	{
+		// creer socket UDP
+		SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
+		if(sock == INVALID_SOCKET)
+		{
+		    perror("socket()");
+		    exit(errno);
+		}
+
+	return sock;
+
+	}
+
+sockaddr_in init_sockaddr_in(char *adresse)
+{
+	to.sin_addr = inet_addr(adresse); //adresse char devient in addr
+	to.sin_port = htons(PORT);
+	to.sin_family = AF_INET;
+
+}
+
+int init_sound(snd_pcm_t **handle_read,snd_pcm_t **handle_write)
+{
+	  //Configurer le micro
+    if ((err = snd_pcm_open(*handle_read, device, SND_PCM_STREAM_CAPTURE, 0)) < 0) {
+        printf("Capture open error: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+    if ((err = snd_pcm_set_params(*handle_read,
+            SND_PCM_FORMAT_U8,
+            SND_PCM_ACCESS_RW_INTERLEAVED,
+            1,
+            48000,
+            1,
+            500000)) < 0) { /* 0.5sec */
+        printf("Capture open error: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+
+    //Configurer les enceintes
+    if ((err = snd_pcm_open(*handle_write, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+        printf("Playback open error: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+    if ((err = snd_pcm_set_params(*handle_write,
+            SND_PCM_FORMAT_U8,
+            SND_PCM_ACCESS_RW_INTERLEAVED,
+            1,
+            48000,
+            1,
+            500000)) < 0) { /* 0.5sec */
+        printf("Playback open error: %s\n", snd_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+}
+
 
 
 int main(void) {
@@ -64,37 +119,7 @@ int main(void) {
     snd_pcm_t *handle_write;
     snd_pcm_sframes_t frames;
 
-    //Config recorder
-    if ((err = snd_pcm_open(&handle_read, device, SND_PCM_STREAM_CAPTURE, 0)) < 0) {
-        printf("Capture open error: %s\n", snd_strerror(err));
-        exit(EXIT_FAILURE);
-    }
-    if ((err = snd_pcm_set_params(handle_read,
-            SND_PCM_FORMAT_U8,
-            SND_PCM_ACCESS_RW_INTERLEAVED,
-            1,
-            48000,
-            1,
-            500000)) < 0) { /* 0.5sec */
-        printf("Capture open error: %s\n", snd_strerror(err));
-        exit(EXIT_FAILURE);
-    }
 
-    //Config playback
-    if ((err = snd_pcm_open(&handle_write, device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-        printf("Playback open error: %s\n", snd_strerror(err));
-        exit(EXIT_FAILURE);
-    }
-    if ((err = snd_pcm_set_params(handle_write,
-            SND_PCM_FORMAT_U8,
-            SND_PCM_ACCESS_RW_INTERLEAVED,
-            1,
-            48000,
-            1,
-            500000)) < 0) { /* 0.5sec */
-        printf("Playback open error: %s\n", snd_strerror(err));
-        exit(EXIT_FAILURE);
-    }
 
     //Loop
     while (1) {
