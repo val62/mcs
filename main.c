@@ -51,6 +51,11 @@ int main(void) {
 }
 
  */
+//Retourn le socket
+int init_socket(...);
+//
+int init_sound(snd_pcm_t *handle_read,snd_pcm_t *handle_write);
+
 
 int main(void) {
     int err;
